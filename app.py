@@ -1,23 +1,33 @@
 import streamlit as st
-import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
+import pickle
 
-@st.cache_data
-def load_data():
-    df = pd.read_csv(r"C:\Users\Junayed\spam-detection-model\spam_data.csv", encoding= "latin-1")
-    df = df[["v1", "v2"]]
-    df.columns = ["label", "message"]
-    df = df.drop_duplicates(subset="message").reset_index(drop=True)
-    df["label_dif"] = (df["label"] == "spam").astype(int)
-    return df
+with open("model.pkl", "rb") as f:
+    model =  pickle.load(f)
 
-@st.cache_resource
-def train_model(df):
-    cv = CountVectorizer(stop_words='english', max_features=5000)
-    X = cv.fit_transform(df["message"])
-    Y = df["label_dif"]
-    model = MultinomialNB()
-    model.fit(X,Y)
-    return cv,model
+with open("vectorizer.pkl", "rb") as f:
+    cv = pickle.load(f)
 
+
+st.set_page_config(page_title="Spam message Detector", page_icon="📩")
+
+st.title("Spam Message Detector")
+st.write("Paste a message below to check whether it is a spam message or not")
+
+message = st.text_area(
+    "Paste your message:",
+    height=120,
+    placeholder="e.g. Congratulations! You won a free iPhone. Click now!"
+)
+
+if st.button("Check Spam"):
+    if message.strip() == "":
+        st.warning("Please enter a message first!")
+    else:
+        vec = cv.transform([message])
+        pred = model.predict(vec)[0]
+        prob = model.predict_proba(vec)[0][pred]
+
+        if pred == 1:
+            st.error(f"This is a spam: confidence {prob:.2%}")
+        else:
+            st.success(f"This is not a spam message: confidence {prob:.2%}")
