@@ -1,5 +1,15 @@
 import streamlit as st
 import pickle
+import re
+import string
+
+
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'\d+', '', text)
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    return text.strip()
+
 
 with open("model.pkl", "rb") as f:
     model =  pickle.load(f)
